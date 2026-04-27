@@ -59,7 +59,7 @@ class BinaryClock(LEDModule):
         update["27"] = amPmBitColor(is_pm)
         
         # Hours -> LEDs 26 down to 22 (5 bits)
-        display_hour = now.hour % 12 or 12
+        display_hour = 12 if now.hour % 12 == 0 else now.hour % 12
         for i, bit in enumerate(self.encode_binary(display_hour, 5)):
             update[f"{26-i}"] = timeBitColor(bit)
             
