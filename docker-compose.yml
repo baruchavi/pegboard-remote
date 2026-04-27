@@ -1,0 +1,4 @@
+services:
+  led-scheduler:
+    build: .
+    restart: unless-stopped
