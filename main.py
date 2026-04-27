@@ -75,12 +75,12 @@ class Blinky(LEDModule):
     """Simple module that blinks a specific LED on and off."""
     def __init__(self, interval_seconds=1):
         super().__init__(interval_seconds)
-        self.curSpot = 28
+        self.curSpot = 30
     
     def get_update(self, now):
         self.last_updated = time.time()
         payload = {str(self.curSpot): [0, 0, 0]}
-        self.curSpot = self.curSpot + 1 if self.curSpot < 30 else 28 
+        self.curSpot = self.curSpot - 1 if self.curSpot > 28 else 30 
         payload[str(self.curSpot)] = [255, 0, 0]
         return payload
 
