@@ -4,11 +4,13 @@ import paho.mqtt.client as mqtt # pyright: ignore[reportMissingImports]
 import datetime
 import requests
 from abc import ABC, abstractmethod
+from zoneinfo import ZoneInfo
 
 # Configuration
 BROKER = "192.168.0.234"
 PORT = 32768
 TOPIC = "leds/control"
+TZ = ZoneInfo("America/New_York")
 
 class LEDModule(ABC):
     """Base class for all LED features."""
@@ -34,7 +36,7 @@ class BinaryClock(LEDModule):
 
     def should_update(self, current_time):
         # Always check to see if the minute has ticked over
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(TZ)
         if now.minute != self.last_minute:
             return True
         return False
@@ -93,7 +95,7 @@ class WeatherModule(LEDModule):
         try:
             resp = requests.get("https://api.open-meteo.com/v1/forecast?latitude=38.9807&longitude=-76.9369&hourly=precipitation_probability,precipitation&timezone=America%2FNew_York&forecast_days=2&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch")
             resp_json = resp.json()
-            date_string = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
+            date_string = datetime.datetime.now(TZ).strftime("%Y-%m-%dT%H:%M")
             if date_string in resp_json["hourly"]["time"]:
                 start_index = (resp_json["hourly"]["time"]).index(date_string)
                 prob_res = resp_json["hourly"]["precipitation_probability"][start_index:start_index+12]
@@ -133,10 +135,10 @@ class LEDController:
 
     def run(self):
         self.connect()
-        print("Starting main loop...")
+        print(f"Starting main loop (Timezone: {TZ})...")
         try:
             while True:
-                now_dt = datetime.datetime.now()
+                now_dt = datetime.datetime.now(TZ)
                 now_ts = time.time()
                 
                 full_update = {}
