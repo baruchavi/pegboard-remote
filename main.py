@@ -76,11 +76,14 @@ class Blinky(LEDModule):
     def __init__(self, interval_seconds=1):
         super().__init__(interval_seconds)
         self.curSpot = 30
+        self.velocity = 1
     
     def get_update(self, now):
         self.last_updated = time.time()
         payload = {str(self.curSpot): [0, 0, 0]}
-        self.curSpot = self.curSpot - 1 if self.curSpot > 28 else 30 
+        # Move first, then check if we need to flip velocity for the next turn
+        self.curSpot = self.curSpot - 1 if self.velocity == 1 else self.curSpot + 1 
+        self.velocity = self.velocity * -1 if self.curSpot != 29 else self.velocity
         payload[str(self.curSpot)] = [255, 0, 0]
         return payload
 
