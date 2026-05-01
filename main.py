@@ -116,6 +116,43 @@ class WeatherModule(LEDModule):
     
         return {} # Returning empty dict as it's a placeholder
 
+class AmbientBrightness(LEDModule):
+    """Subscribes to leds/lux and adjusts brightness based on ambient light."""
+
+    TOPIC_LUX        = "leds/lux"
+    TOPIC_BRIGHTNESS = "leds/brightness"
+    LUX_MIN          = 10      # → brightness 1.0
+    LUX_MAX          = 1000    # → brightness 0.05
+    BRIGHTNESS_MAX   = 1.0
+    BRIGHTNESS_MIN   = 0.05
+
+    def __init__(self, interval_seconds=1):
+        super().__init__(interval_seconds)
+        self._latest_lux = None
+
+    def on_lux_message(self, client, userdata, msg):
+        try:
+            payload = json.loads(msg.payload.decode())
+            self._latest_lux = float(payload["lux"])
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            print(f"[AmbientBrightness] Bad lux payload: {e}")
+
+    def register(self, mqtt_client):
+        """Call after MQTT connects to subscribe to the lux topic."""
+        mqtt_client.subscribe(self.TOPIC_LUX)
+        mqtt_client.message_callback_add(self.TOPIC_LUX, self.on_lux_message)
+
+    def _lux_to_brightness(self, lux: float) -> float:
+        if lux > 30:
+            return 0.9
+        if lux > 8:
+            return 0.5
+        return 0.15
+
+    def get_update(self, now):
+        self.last_updated = time.time()
+        return {}  # This module publishes directly; no LED index updates needed
+
 class LEDController:
     """Manages the MQTT connection and module updates."""
     def __init__(self, broker, port, topic):
@@ -131,6 +168,10 @@ class LEDController:
     def connect(self):
         try:
             self.client.connect(self.broker, self.port)
+            # Register any modules that need MQTT subscriptions
+            for module in self.modules:
+                if hasattr(module, "register"):
+                    module.register(self.client)
             self.client.loop_start()
             print(f"Connected to MQTT broker at {self.broker}:{self.port}")
         except Exception as e:
@@ -148,6 +189,11 @@ class LEDController:
                 for module in self.modules:
                     if module.should_update(now_ts):
                         update = module.get_update(now_dt)
+                        # Handle AmbientBrightness publishing directly to brightness topic
+                        if hasattr(module, "_latest_lux") and module._latest_lux is not None:
+                            brightness = module._lux_to_brightness(module._latest_lux)
+                            self.client.publish(AmbientBrightness.TOPIC_BRIGHTNESS, str(brightness))
+                            print(f"[{now_dt.strftime('%H:%M:%S')}] Brightness → {brightness} (lux={module._latest_lux:.1f})")
                         if update:
                             full_update.update(update)
                 
@@ -168,5 +214,6 @@ if __name__ == "__main__":
     controller.add_module(BinaryClock())
     # controller.add_module(WeatherModule())
     controller.add_module(Blinky())
+    controller.add_module(AmbientBrightness())
     
     controller.run()
