@@ -88,7 +88,7 @@ class Blinky(LEDModule):
         self.curSpot = self.curSpot - 1 if self.velocity == 1 else self.curSpot + 1
         self.velocity = self.velocity * -1 if self.curSpot != 29 else self.velocity
         payload[str(self.curSpot)] = [255, 0, 0] if not self.secondColor else [0, 0, 255]
-        self.secondColor = True
+        self.secondColor = not self.secondColor and self.curSpot != 29
         return payload
 
 class WeatherModule(LEDModule):
