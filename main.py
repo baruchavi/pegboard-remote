@@ -160,7 +160,7 @@ class AmbientBrightness(LEDModule):
             return 0.9
         if lux > 8:
             return 0.5
-        return 0.05
+        return 0.01
 
     def get_update(self, now):
         self.last_updated = time.time()
