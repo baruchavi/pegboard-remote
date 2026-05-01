@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 # Configuration
 BROKER = "192.168.0.234"
-PORT = 32768
+PORT = 32771
 TOPIC = "leds/control"
 TZ = ZoneInfo("America/New_York")
 
