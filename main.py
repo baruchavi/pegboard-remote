@@ -80,11 +80,13 @@ class Blinky(LEDModule):
     
     def get_update(self, now):
         self.last_updated = time.time()
-        payload = {str(self.curSpot): [0, 0, 0]}
+        # payload = {str(self.curSpot): [0, 0, 0]}
+        payload = {}
+        
         # Move first, then check if we need to flip velocity for the next turn
         self.curSpot = self.curSpot - 1 if self.velocity == 1 else self.curSpot + 1 
         self.velocity = self.velocity * -1 if self.curSpot != 29 else self.velocity
-        payload[str(self.curSpot)] = [255, 0, 0]
+        payload[str(self.curSpot)] = [255, 0, 0] if self.velocity == 1 else [0, 0, 255]
         return payload
 
 class WeatherModule(LEDModule):
