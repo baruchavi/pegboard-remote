@@ -5,6 +5,7 @@ import datetime
 import requests
 from abc import ABC, abstractmethod
 from zoneinfo import ZoneInfo
+import colorsys
 
 # Configuration
 BROKER = "192.168.0.234"
@@ -77,19 +78,27 @@ class Blinky(LEDModule):
         super().__init__(interval_seconds)
         self.curSpot = 30
         self.velocity = 1
-        self.secondColor = False
+        self.curColor = 0
+        self.nColors = 10
+        self.COLORS = [tuple(round(c * 255) for c in colorsys.hsv_to_rgb(i / self.nColors, 1, 1)) for i in range(self.nColors)]
     
     def get_update(self, now):
-        self.last_updated = time.time()
-        # payload = {str(self.curSpot): [0, 0, 0]}
-        payload = {}
+        self.curSpot = (self.curSpot - 1) if self.curSpot != 28 else 30
+        self.curColor = (self.curColor + 1) % (self.nColors-1) if self.curSpot == 30 else self.curColor
+        payload = {str(self.curSpot): self.COLORS[self.curColor]}
         
-        # Move first, then check if we need to flip velocity for the next turn
-        self.curSpot = self.curSpot - 1 if self.velocity == 1 else self.curSpot + 1
-        self.velocity = self.velocity * -1 if self.curSpot != 29 else self.velocity
-        payload[str(self.curSpot)] = [255, 0, 0] if not self.secondColor else [0, 0, 255]
-        self.secondColor = not self.secondColor and self.curSpot != 29
         return payload
+    # def get_update(self, now):
+    #     self.last_updated = time.time()
+    #     payload = {str(self.curSpot): [0, 0, 0]}
+    #     # payload = {}
+        
+    #     # Move first, then check if we need to flip velocity for the next turn
+    #     self.curSpot = self.curSpot - 1 if self.velocity == 1 else self.curSpot + 1
+    #     self.velocity = self.velocity * -1 if self.curSpot != 29 else self.velocity
+    #     payload[str(self.curSpot)] = self.COLORS[self.curColor]
+    #     self.curColor = (self.curColor + 1) % (self.nColors-1) if self.curSpot != 29 else self.curColor
+    #     return payload
 
 class WeatherModule(LEDModule):
     """Example module for showing weather data."""
